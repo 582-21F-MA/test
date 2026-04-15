@@ -1,5 +1,14 @@
 (() => {
     /**
+     * Runs a named test containing one or more expects.
+     * @param {string} description
+     * @param {() => void} fn
+     */
+    globalThis.test = function test(_description, fn) {
+        fn();
+    };
+
+    /**
      * Creates an assertion object for the given expected value.
      * @param {any} received
      * @returns {{ toBe: (expected: any) => void, toEqual: (expected: any) => void }}
@@ -20,7 +29,7 @@
     expect(true).toBe(true);
 
     /**
-     * Reports a test failure with the line number, expected, and received values.
+     * Reports a test failure.
      * @param {any} expected
      * @param {any} received
      */
