@@ -62,6 +62,15 @@
         if (a instanceof Date && b instanceof Date) {
             return a.getTime() === b.getTime();
         }
+        if (a instanceof Map && b instanceof Map) {
+            if (a.size !== b.size) return false;
+            for (const [key, val] of a) {
+                if (!b.has(key)) return false;
+                if (!deepEqual(val, b.get(key))) return false;
+            }
+            return true;
+        }
+        if (a instanceof Map !== b instanceof Map) return false;
 
         const keysA = Object.keys(a);
         const keysB = Object.keys(b);
@@ -74,6 +83,9 @@
     expect({ a: 1, b: { c: 2 } }).toEqual({ a: 1, b: { c: 2 } });
     expect([1, 2, 3]).toEqual([1, 2, 3]);
     expect(new Date("2024-01-01")).toEqual(new Date("2024-01-01"));
+    expect(new Map([["a", 1], ["b", 2]])).toEqual(
+        new Map([["a", 1], ["b", 2]]),
+    );
 
     /**
      * Formats the given value for output.
@@ -94,6 +106,12 @@
                 if (Array.isArray(value)) {
                     return `the array ${JSON.stringify(value)}`;
                 }
+                if (value instanceof Map) {
+                    const entries = [...value].map(([k, v]) =>
+                        `${JSON.stringify(k)} => ${JSON.stringify(v)}`
+                    ).join(", ");
+                    return `the Map {${entries}}`;
+                }
                 return `the object ${JSON.stringify(value)}`;
             default:
                 return String(value);
@@ -111,4 +129,5 @@
     );
     expect(formatValue({ a: 1 })).toBe("the object {\"a\":1}");
     expect(formatValue([1, 2])).toBe("the array [1,2]");
+    expect(formatValue(new Map([["a", 1]]))).toBe("the Map {\"a\" => 1}");
 })();
