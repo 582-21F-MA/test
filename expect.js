@@ -4,7 +4,7 @@
      * @param {string} description
      * @param {() => void} fn
      */
-    globalThis.test = function test(_description, fn) {
+    globalThis.test = function(_description, fn) {
         fn();
     };
 
@@ -13,38 +13,73 @@
      * @param {any} received
      * @returns {{ toBe: (expected: any) => void, toEqual: (expected: any) => void }}
      */
-    globalThis.expect = function expect(received) {
+    globalThis.expect = function(received) {
         return {
             toBe: (expected) => {
-                if (received !== expected) fail(expected, received);
+                if (received !== expected) failCompare(expected, received);
             },
             toEqual: (expected) => {
-                if (!deepEqual(received, expected)) fail(expected, received);
+                if (!deepEqual(received, expected)) {
+                    failCompare(expected, received);
+                }
+            },
+            toContain: (item) => {
+                if (typeof received !== "string" && !Array.isArray(received)) {
+                    throw new Error(
+                        "the argument passed to expect must be a string or an array",
+                    );
+                }
+                if (!received.includes(item)) failContain(item, received);
             },
         };
     };
 
-    expect(1 + 1).toBe(2);
-    expect("hello").toBe("hello");
-    expect(true).toBe(true);
+    /**
+     * Logs a failure message and sets the exit code outside the browser.
+     * @param {string} msg
+     */
+    function reportFailure(msg) {
+        console.error(msg);
+        if (typeof document === "undefined") process.exitCode = 1;
+    }
 
     /**
-     * Reports a test failure.
-     * @param {any} expected
-     * @param {any} received
+     * Returns the source line number of the outermost call in the stack.
+     * @returns {string}
      */
-    function fail(expected, received) {
+    function getFailLine() {
         const err = new Error();
         const path = err.stack
             .split("\n").filter(p => p.trim() !== "").at(-1);
-        const line = path.split(":").at(-2);
-        const msg = `Test failed on line ${line}: `
-            + `expected ${formatValue(expected)}, `
-            + `but received ${formatValue(received)}.`;
-        console.error(msg);
+        return path.split(":").at(-2);
+    }
 
-        const notInBrowser = typeof document === "undefined";
-        if (notInBrowser) process.exitCode = 1;
+    /**
+     * Reports a comparison test failure.
+     * @param {any} expected
+     * @param {any} received
+     */
+    function failCompare(expected, received) {
+        const line = getFailLine();
+        reportFailure(
+            `Test failed on line ${line}: `
+                + `expected ${formatValue(expected)}, `
+                + `but received ${formatValue(received)}.`,
+        );
+    }
+
+    /**
+     * Reports a contain test failure.
+     * @param {any} item
+     * @param {any} received
+     */
+    function failContain(item, received) {
+        const line = getFailLine();
+        reportFailure(
+            `Test failed on line ${line}: `
+                + `expected ${formatValue(received)} `
+                + `to contain ${formatValue(item)}.`,
+        );
     }
 
     /**
@@ -79,20 +114,12 @@
         return keysA.every(key => deepEqual(a[key], b[key]));
     }
 
-    expect({ a: 1 }).toEqual({ a: 1 });
-    expect({ a: 1, b: { c: 2 } }).toEqual({ a: 1, b: { c: 2 } });
-    expect([1, 2, 3]).toEqual([1, 2, 3]);
-    expect(new Date("2024-01-01")).toEqual(new Date("2024-01-01"));
-    expect(new Map([["a", 1], ["b", 2]])).toEqual(
-        new Map([["a", 1], ["b", 2]]),
-    );
-
     /**
      * Formats the given value for output.
      * @param {any} value
      * @returns {string}
      */
-    function formatValue(value) {
+    globalThis._formatValue = function(value) {
         switch (typeof value) {
             case "number":
                 return `the number ${value}`;
@@ -116,18 +143,5 @@
             default:
                 return String(value);
         }
-    }
-
-    expect(formatValue(42)).toBe("the number 42");
-    expect(formatValue("hi")).toBe("the string \"hi\"");
-    expect(formatValue(true)).toBe("true");
-    expect(formatValue(null)).toBe("null");
-    expect(formatValue(new Date("2024-01-01T00:00:00"))).toBe(
-        `the Date object for ${
-            new Date("2024-01-01T00:00:00").toLocaleString()
-        }`,
-    );
-    expect(formatValue({ a: 1 })).toBe("the object {\"a\":1}");
-    expect(formatValue([1, 2])).toBe("the array [1,2]");
-    expect(formatValue(new Map([["a", 1]]))).toBe("the Map {\"a\" => 1}");
+    };
 })();
