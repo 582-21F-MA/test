@@ -44,14 +44,21 @@
     }
 
     /**
-     * Returns the source line number of the outermost call in the stack.
+     * Returns the line number of the `expect` call that failed.
      * @returns {string}
      */
     function getFailLine() {
         const err = new Error();
-        const path = err.stack
-            .split("\n").filter(p => p.trim() !== "").at(-1);
-        return path.split(":").at(-2);
+        const frame = err.stack
+            .split("\n")
+            .find(p =>
+                // Skip internal frames; first user frame is the `expect` call.
+                !p.includes("expect.js")
+                // "at " = V8 (Node/Chrome)
+                // "@" = SpiderMonkey/JSC (Firefox/Safari)
+                && (p.trim().startsWith("at ") || p.includes("@"))
+            );
+        return frame ? frame.split(":").at(-2) : "?";
     }
 
     /**
