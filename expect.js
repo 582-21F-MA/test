@@ -63,8 +63,8 @@
         const line = getFailLine();
         reportFailure(
             `Test failed on line ${line}: `
-                + `expected ${formatValue(expected)}, `
-                + `but received ${formatValue(received)}.`,
+                + `expected ${_formatValue(expected)}, `
+                + `but received ${_formatValue(received)}.`,
         );
     }
 
@@ -77,8 +77,8 @@
         const line = getFailLine();
         reportFailure(
             `Test failed on line ${line}: `
-                + `expected ${formatValue(received)} `
-                + `to contain ${formatValue(item)}.`,
+                + `expected ${_formatValue(received)} `
+                + `to contain ${_formatValue(item)}.`,
         );
     }
 
